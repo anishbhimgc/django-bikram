@@ -10,8 +10,9 @@
 Bikram Sambat (Nepali) dates for Python, with first-class Django and DRF
 integration.
 
-> 🇳🇵 नेपालीमा पढ्न [README.ne.md](README.ne.md) हेर्नुहोस् — छिटो सुरु गर्न
-> [docs/quickstart.ne.md](docs/quickstart.ne.md)।
+> **New here?** Start with the **[Quickstart](docs/quickstart.md)**.
+>
+> 🇳🇵 नेपालीमा: [README.ne.md](README.ne.md) · [छिटो सुरु गर्ने मार्गदर्शन](docs/quickstart.ne.md)
 
 ```python
 from django_bikram import BSDate
