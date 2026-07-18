@@ -49,13 +49,13 @@ def test_month_bounds_tile_within_a_year() -> None:
 
 
 def test_bounds_at_the_end_of_the_table() -> None:
-    """The last year's upper bound is computable even though 2084 BS is not.
+    """The last year's upper bound is the day after its final day.
 
-    The bound is arithmetic on a datetime.date, so it does not need a BS year
-    that the table lacks -- an easy off-by-one to get wrong.
+    The bound is arithmetic on a datetime.date, so it lands one day past the
+    table's last date -- an easy off-by-one to get wrong.
     """
     start, end = bs_year_bounds(MAX_BS_YEAR)
-    assert end == datetime.date(2027, 4, 14)
+    assert end == datetime.date(2028, 4, 13)  # day after 2084-12-30 (2028-04-12)
     assert end > start
 
 

@@ -41,7 +41,7 @@ ALL_DATES = _all_bs_dates()
 def test_the_range_is_the_size_we_think_it_is() -> None:
     """Sanity-check the exhaustive fixture before relying on it."""
     assert len(ALL_DATES) == (MAX_AD_DATE - MIN_AD_DATE).days + 1
-    assert len(ALL_DATES) == 39813
+    assert len(ALL_DATES) == 40178  # 1975-2084 BS (39813 + 365 for 2084)
 
 
 def test_bs_to_ad_is_a_bijection_over_the_whole_range() -> None:

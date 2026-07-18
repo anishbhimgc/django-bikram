@@ -17,23 +17,31 @@ published by the Nepal Panchanga Nirnayak Samiti). Month lengths are decided
 astronomically -- by the moment the sun crosses into each zodiac sign -- so
 they cannot be computed from a rule and must come from published tables.
 
-Verified range: **1975-01-01 BS through 2083-12-30 BS**
-(1918-04-13 AD through 2027-04-13 AD).
+Verified range: **1975-01-01 BS through 2084-12-30 BS**
+(1918-04-13 AD through 2028-04-12 AD).
 
-Across those 109 years the two sources agree on all 1,308 month lengths,
-every year totals 365 or 366 days, every month is 29-32 days, and the derived
-anchors reproduce independently attested dates (see ``ANCHOR_AD`` below).
+For 1975-2083 (109 years) the two sources above agree on all 1,308 month
+lengths, every year totals 365 or 366 days, every month is 29-32 days, and the
+derived anchors reproduce independently attested dates (see ``ANCHOR_AD``).
 
-Why the range stops at 2083 BS
+**2084** was added later (2026-07) from a different independent pair: scraped
+from hamropatro.com and found identical to ``nepali-datetime`` for all twelve
+months. Those two disagree with ``bikram-sambat`` on 2084, so Hamro Patro breaks
+the tie; 2084 chains exactly onto 2083 (1 Baishakh 2084 = 2027-04-14). It is the
+first year with a ``(30, 30, 30)`` tail -- corroborated by both sources, but
+worth re-confirming against the official Panchanga once it publishes.
+
+Why the range stops at 2084 BS
 ------------------------------
-It stops where the evidence stops, not where the sources stop.
+It stops where the evidence stops, not where the sources stop. 2084 itself was
+confirmed against Hamro Patro (see above); from 2085 on there is no such check:
 
-* ``nepali-datetime`` carries rows through 2100 BS, but from 2084 BS onward
-  they are visibly synthetic: 14 of its 17 remaining years end in the tail
+* ``nepali-datetime`` carries rows through 2100 BS, but from 2085 BS onward
+  they are visibly synthetic: 14 of its remaining years end in the tail
   ``(30, 30, 30)``, and **2096 BS sums to 364 days** -- an impossible year.
-* ``bikram-sambat`` carries rows from 1901 to 2199 BS, but outside 1975-2083
+* ``bikram-sambat`` carries rows from 1901 to 2199 BS, but outside 1975-2084
   it has no corroborating source here.
-* The two tables diverge from 2084 BS onward and never re-converge.
+* The two tables diverge from 2085 BS onward and never re-converge.
 
 Extrapolated data would be silently wrong rather than loudly absent, so by
 default dates outside the verified range raise
@@ -105,7 +113,7 @@ VERIFIED_MIN_BS_YEAR = 1975
 #: Last Bikram Sambat year *verified* against two independent sources. Beyond
 #: this the calendar can only be *predicted*, not attested; such years live in
 #: :data:`PROVISIONAL_BS_MONTH_DAYS` and are flagged on use.
-VERIFIED_MAX_BS_YEAR = 2083
+VERIFIED_MAX_BS_YEAR = 2084
 
 #: The BS year whose 1 Baishakh is pinned to :data:`ANCHOR_AD`.
 ANCHOR_BS_YEAR = 1975
@@ -233,6 +241,13 @@ VERIFIED_BS_MONTH_DAYS: dict[int, tuple[int, ...]] = {
     2081: (31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31),  # 366
     2082: (31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30),  # 365
     2083: (31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30),  # 365
+    # 2084 added 2026-07: scraped from hamropatro.com and found identical to
+    # nepali-datetime for all 12 months. Those two are independent sources, and
+    # they disagree with bikram-sambat here (366 days) -- so Hamro Patro breaks
+    # the tie. It chains exactly onto 2083 (1 Baishakh 2084 = 2027-04-14). This
+    # is the first year with a (30, 30, 30) tail; unusual, but corroborated by
+    # both sources. Re-confirm against the official Panchanga once it publishes.
+    2084: (31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 30, 30),  # 365
 }
 
 #: Provisional (computed) month lengths for years beyond the verified range.
@@ -297,7 +312,7 @@ def _last_ad_date(last_bs_year: int) -> datetime.date:
 MIN_AD_DATE = ANCHOR_AD
 
 #: Latest Gregorian date covered by the *verified* range (last day of Chaitra
-#: 2083 BS = 2027-04-13). Fixed regardless of any provisional extension.
+#: 2084 BS = 2028-04-12). Fixed regardless of any provisional extension.
 VERIFIED_MAX_AD_DATE = _last_ad_date(VERIFIED_MAX_BS_YEAR)
 
 #: Latest representable Gregorian date across the working table. Equals

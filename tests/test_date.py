@@ -124,7 +124,7 @@ def test_today_accepts_an_explicit_timezone(monkeypatch: pytest.MonkeyPatch) -> 
 def test_min_and_max_are_the_table_bounds() -> None:
     """min/max sit exactly at the edges of the verified range."""
     assert BSDate.min == BSDate(1975, 1, 1)
-    assert BSDate.max == BSDate(2083, 12, 30)
+    assert BSDate.max == BSDate(2084, 12, 30)
     assert BSDate.resolution == datetime.timedelta(days=1)
 
 
@@ -136,7 +136,7 @@ def test_min_and_max_are_the_table_bounds() -> None:
         ((2081, 0, 1), InvalidBSDate),
         ((2081, 1, 0), InvalidBSDate),
         ((1974, 1, 1), DateOutOfRange),
-        ((2084, 1, 1), DateOutOfRange),
+        ((2085, 1, 1), DateOutOfRange),
     ],
 )
 def test_invalid_dates_raise_specific_errors(args: tuple[int, int, int], exc: type) -> None:

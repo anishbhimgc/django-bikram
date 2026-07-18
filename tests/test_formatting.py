@@ -197,13 +197,11 @@ def test_parse_rejects_non_string() -> None:
 
 def test_parse_two_digit_year_outside_range_raises() -> None:
     """A %y that maps nowhere in the verified range is an error, not a guess."""
-    # 74 -> 1974 (below MIN 1975) and 2074 is in range, so 74 resolves fine;
-    # but there is no two-digit value that maps outside on both sides within
-    # 1975..2083 except via an impossible year, so check the boundary logic
-    # directly with a value whose expansions both miss: none exist here, so
-    # assert the documented preference instead.
+    # Within 1975..2084 no two-digit year maps nowhere (2000+yy needs yy<=84,
+    # 1900+yy needs yy>=75, and those overlap), so there is nothing to raise on
+    # -- assert the documented 20xx preference instead.
     assert parse_bs("74-01-01", "%y-%m-%d") == (2074, 1, 1)
-    assert parse_bs("84-01-01", "%y-%m-%d") == (1984, 1, 1)
+    assert parse_bs("85-01-01", "%y-%m-%d") == (1985, 1, 1)  # 2085 out of range
 
 
 def test_two_digit_year_ambiguity_is_resolved_toward_20xx() -> None:

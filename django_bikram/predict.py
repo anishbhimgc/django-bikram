@@ -13,7 +13,7 @@ horizon. What it returns is a prediction, not a fact.
 
 How good is the prediction?
 ---------------------------
-Measured against the 109 verified years (1975-2083 BS), a self-check anyone can
+Measured against the 110 verified years (1975-2084 BS), a self-check anyone can
 re-run via :func:`validate`:
 
 * **~87% of months** get the exact right length;
@@ -288,7 +288,7 @@ def build_provisional_table(
     Example:
         >>> table = build_provisional_table(through_year=2183)
         >>> min(table), max(table)
-        (2084, 2183)
+        (2085, 2183)
         >>> all(sum(v) in (365, 366) and len(v) == 12 for v in table.values())
         True
     """

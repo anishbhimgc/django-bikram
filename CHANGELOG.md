@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Verified 2084 BS.** The verified range now runs 1975–2084 BS
+  (through 12 April 2028), up from 2083. 2084 was cross-checked between
+  hamropatro.com and `nepali-datetime` (identical for all twelve months;
+  `bikram-sambat` is the lone outlier and chains one day short). This pushes the
+  `DateOutOfRange` horizon — and `BSDate.today()`'s expiry — out by a full year.
+
 - `django_bikram.sources.bikram_sambat_table()` — reads the MIT-licensed
   `bikram-sambat` table as an *alternative* provisional source past the verified
   range, for callers who prefer it to the built-in predictor. Opt-in extra:

@@ -40,12 +40,12 @@ def test_validate_reproduces_the_documented_accuracy() -> None:
     never treated as verified.
     """
     report = validate()
-    assert report["months_total"] == 1308
-    assert report["months_exact"] == 1142
-    assert report["years_total"] == 109
+    assert report["months_total"] == 1320
+    assert report["months_exact"] == 1150
+    assert report["years_total"] == 110
     assert report["years_exact"] == 58
     assert report["max_error_days"] == 1
-    assert report["error_histogram"] == {-1: 83, 0: 1142, 1: 83}
+    assert report["error_histogram"] == {-1: 85, 0: 1150, 1: 85}
 
 
 def test_validate_month_accuracy_is_in_the_expected_band() -> None:
@@ -204,7 +204,7 @@ def test_default_import_has_no_provisional_years() -> None:
         """
         import django_bikram as b
         from django_bikram import BSDate, DateOutOfRange
-        assert b.MAX_BS_YEAR == b.VERIFIED_MAX_BS_YEAR == 2083
+        assert b.MAX_BS_YEAR == b.VERIFIED_MAX_BS_YEAR == 2084
         try:
             BSDate(2100, 1, 1)
         except DateOutOfRange:

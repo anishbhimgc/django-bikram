@@ -38,25 +38,25 @@ Invoice.objects.filter(issued_on__gte=BSDate(2081, 1, 1))  # uses the index
 
 Two things are deliberately not glossed over.
 
-### 1. The *verified* range ends at 2083 BS (13 April 2027)
+### 1. The *verified* range ends at 2084 BS (12 April 2028)
 
 The Bikram Sambat calendar's month lengths are set **astronomically** — by the
 moment the sun crosses into each zodiac sign — and published year by year in
 the Nepali Panchanga. This package ships the years it could **verify against two
-independent sources**: **1975–2083 BS (1918-04-13 – 2027-04-13 AD)**. By default,
+independent sources**: **1975–2084 BS (1918-04-13 – 2028-04-12 AD)**. By default,
 dates outside that range raise `DateOutOfRange` rather than guessing.
 
 They *can* be approximated by computation — but not exactly, and that gap is the
 whole point. A Surya-Siddhanta model of the sun (the same reckoning the official
-calendar uses) reproduces the verified 109 years to only **~87% of months, the
-rest off by exactly one day, and just 58 of 109 years fully correct** (re-run it
+calendar uses) reproduces the verified years to only **~87% of months, the
+rest off by exactly one day, and just 58 of 110 years fully correct** (re-run it
 yourself: `python -c "from django_bikram.predict import validate; print(validate())"`).
 The residual is the traditional day-boundary rule plus the committee's occasional
 manual corrections — real, and not tunable away. So computed years are shipped as
 a clearly-marked **provisional** tier, never as fact.
 
 If 2027 is too close for you (it is, for anything long-lived), you have two
-honest options — see [Living past 2083](#living-past-2083).
+honest options — see [Living past 2084](#living-past-2084).
 
 ### 2. Distribution name vs. import name
 
@@ -214,7 +214,7 @@ keep working, while `except BikramError` catches exactly this package.
 
 ```python
 BSDate(2081, 1, 32)   # InvalidBSDate: day 32 is out of range for 2081-01, which has 31 days
-BSDate(2090, 1, 1)    # DateOutOfRange: BS year 2090 is outside the verified range 1975..2083
+BSDate(2090, 1, 1)    # DateOutOfRange: BS year 2090 is outside the verified range 1975..2084
 ```
 
 ---
@@ -339,8 +339,8 @@ sources:
 Both ultimately derive from the Nepali Panchanga. Month lengths are facts, not
 authorship; the implementations here are original.
 
-**Verified range: 1975–2083 BS (1918-04-13 – 2027-04-13 AD).** Across those 109
-years the two sources agree on **all 1,308 month lengths**, and:
+**Core verified range: 1975–2083 BS (1918-04-13 – 2027-04-13 AD).** Across those
+109 years the two sources agree on **all 1,308 month lengths**, and:
 
 - every year totals 365 or 366 days;
 - every month is 29–32 days;
@@ -357,13 +357,21 @@ years the two sources agree on **all 1,308 month lengths**, and:
 > April 1943**, and the whole 1975–2083 chain is self-consistent only with that
 > value.
 
-**Why it stops at 2083** — it stops where the evidence stops, not where the
+**2084 BS was added later (July 2026)** from a different independent pair:
+scraped from hamropatro.com and found identical to `nepali-datetime` for all
+twelve months (those two disagree with `bikram-sambat` there, so Hamro Patro
+breaks the tie). It chains exactly onto 2083 and extends the verified range to
+**12 April 2028**. It is the first year with a `(30, 30, 30)` tail — corroborated
+by both sources, but worth re-confirming against the official Panchanga.
+
+**Why it stops at 2084** — it stops where the evidence stops, not where the
 sources stop:
 
-- `nepali-datetime` carries rows to 2100 BS, but from 2084 they are visibly
+- `nepali-datetime` carries rows to 2100 BS, but from 2085 they are visibly
   synthetic: 14 of its 17 remaining years end in the tail `(30, 30, 30)`, and
-  **2096 BS sums to 364 days**, which is not a possible year.
-- `bikram-sambat` carries 1901–2199 BS, but outside 1975–2083 nothing here
+  **2096 BS sums to 364 days**, which is not a possible year. (2084 itself
+  checked out against Hamro Patro; 2085 onward has no such corroboration.)
+- `bikram-sambat` carries 1901–2199 BS, but outside 1975–2084 nothing here
   corroborates it.
 - The two diverge from 2084 onward and never re-converge.
 
@@ -372,16 +380,17 @@ same reason: single-source and unverified.
 
 ---
 
-## Living past 2083
+## Living past 2084
 
-2027 is close. Two honest ways forward, and one that is not on offer.
+April 2028 is the current edge. Two honest ways forward, and one that is not on
+offer.
 
 ### Not on offer: a "100-year table" of verified dates
 
 There isn't one — anywhere. Nobody has authoritative month lengths for
-2084 BS onward, because the Panchanga committee sets them astronomically and
+2085 BS onward, because the Panchanga committee sets them astronomically and
 publishes roughly a year ahead. Every file that claims a century of BS dates is
-either computed (a prediction) or filler (the `nepali-datetime` rows past 2083
+either computed (a prediction) or filler (the `nepali-datetime` rows past 2084
 include a **364-day year**). This package will not pretend otherwise.
 
 ### Option A — extend the verified table as data is published
@@ -444,7 +453,7 @@ install_provisional(bikram_sambat_table(through_year=2150))
 ```
 
 Be clear-eyed: this is still **one unverified source**, no more authoritative
-than the predictor — they disagree on every year past 2083, and neither is the
+than the predictor — they disagree on every year past 2084, and neither is the
 official Panchanga. It is offered only so you can choose which best-guess to run.
 
 To silence or harden the warning globally:

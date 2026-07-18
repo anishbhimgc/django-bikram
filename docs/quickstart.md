@@ -3,9 +3,9 @@
 A practical, step-by-step guide to using `django-bikram`. For the full reference,
 see the [README](../README.md). नेपालीमा: [quickstart.ne.md](quickstart.ne.md).
 
-> This library ships **only verified dates: 1975–2083 BS** (up to 13 April 2027).
+> This library ships **only verified dates: 1975–2084 BS** (up to 12 April 2028).
 > Dates outside that range raise `DateOutOfRange` by default — this is
-> intentional (it never guesses). See [step 8](#step-8--dates-past-2083).
+> intentional (it never guesses). See [step 8](#step-8--dates-past-2084).
 
 ---
 
@@ -161,17 +161,17 @@ class MyAppConfig(AppConfig):
 
 ---
 
-## Step 8 — Dates past 2083
+## Step 8 — Dates past 2084
 
 ```python
 BSDate(2081, 1, 32)   # InvalidBSDate — 2081-01 only has 31 days
-BSDate(2090, 1, 1)    # DateOutOfRange — outside the verified range (1975..2083)
+BSDate(2100, 1, 1)    # DateOutOfRange — outside the verified range (1975..2084)
 ```
 
-The calendar is verified through **2083 BS (13 April 2027)**. Past that, month
+The calendar is verified through **2084 BS (12 April 2028)**. Past that, month
 lengths are not yet officially published, so by default the library refuses them.
 
-If you need dates beyond 2027 and can accept that a *predicted* month length is
+If you need dates beyond 2028 and can accept that a *predicted* month length is
 right about seven times in eight (±1 day otherwise), opt in:
 
 ```bash
@@ -180,7 +180,7 @@ export DJANGO_BIKRAM_PROVISIONAL_THROUGH_YEAR=2183
 
 Now `BSDate(2100, 1, 1)` works but is flagged (`is_verified == False`, and using
 it raises `ProvisionalDateWarning`). **Never use predicted dates where a one-day
-error matters** — see the README's ["Living past 2083"](../README.md#living-past-2083).
+error matters** — see the README's ["Living past 2084"](../README.md#living-past-2084).
 
 ---
 
