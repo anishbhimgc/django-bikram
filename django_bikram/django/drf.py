@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, NoReturn
 
 try:
     from rest_framework import serializers
@@ -154,8 +154,12 @@ class BSDateField(serializers.Field):
         if out_of_range:
             self._fail_out_of_range()
         self.fail("invalid", formats=", ".join(self.input_formats))
+        # Unreachable: DRF's fail() always raises. The explicit raise tells the
+        # type checker the function never falls through without a BSDate, since
+        # fail() is untyped (Any) without djangorestframework-stubs installed.
+        raise AssertionError("unreachable")  # pragma: no cover
 
-    def _fail_out_of_range(self) -> None:
+    def _fail_out_of_range(self) -> NoReturn:
         """Raise the out-of-range validation error.
 
         Raises:
@@ -164,6 +168,7 @@ class BSDateField(serializers.Field):
         from ..calendar_data import MAX_BS_YEAR, MIN_BS_YEAR
 
         self.fail("out_of_range", min_year=MIN_BS_YEAR, max_year=MAX_BS_YEAR)
+        raise AssertionError("unreachable")  # pragma: no cover - fail() raises
 
 
 def register_serializer_field() -> None:

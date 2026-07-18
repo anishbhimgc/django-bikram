@@ -42,11 +42,16 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-        django: ["4.2", "5.1", "5.2"]
+        django: ["4.2", "5.2", "6.0"]
         exclude:
-          # Django 4.2 does not officially support Python 3.13.
+          # Django 4.2 supports Python up to 3.12.
           - python-version: "3.13"
             django: "4.2"
+          # Django 6.0 requires Python 3.12+.
+          - python-version: "3.10"
+            django: "6.0"
+          - python-version: "3.11"
+            django: "6.0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

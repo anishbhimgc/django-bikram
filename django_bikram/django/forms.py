@@ -92,7 +92,7 @@ class BSDateInput(forms.TextInput):
         Returns:
             The template context.
         """
-        context = super().get_context(name, value, attrs)
+        context: dict[str, Any] = super().get_context(name, value, attrs)
         if isinstance(value, BSDate):
             context["widget"]["attrs"]["data-bs-date"] = value.isoformat()
         return context
