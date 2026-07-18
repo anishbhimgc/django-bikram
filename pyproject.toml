@@ -1,0 +1,114 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-bikram"
+version = "0.1.0"
+description = "Bikram Sambat (Nepali) dates for Python and Django, stored as native database dates."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+keywords = ["bikram sambat", "nepali", "nepal", "date", "calendar", "django", "bs", "ad"]
+authors = [{ name = "django-bikram contributors" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Nepali",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+django = ["Django>=4.2"]
+drf = ["Django>=4.2", "djangorestframework>=3.14"]
+dev = [
+    "Django>=4.2",
+    "djangorestframework>=3.14",
+    "pytest>=7.4",
+    "pytest-django>=4.7",
+    "mypy>=1.8",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/example/django-bikram"
+Documentation = "https://github.com/example/django-bikram#readme"
+Source = "https://github.com/example/django-bikram"
+Changelog = "https://github.com/example/django-bikram/blob/main/CHANGELOG.md"
+Issues = "https://github.com/example/django-bikram/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["django_bikram"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/django_bikram",
+    "/tests",
+    "/docs",
+    "/README.md",
+    "/README.ne.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+testpaths = ["tests"]
+filterwarnings = ["error"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+
+# Django and DRF ship no type information the plugin-less checker can read, so
+# their imports arrive as `Any`. Silence the "missing stubs" noise and allow the
+# unavoidable `class BSDateField(models.DateField)` subclassing of an Any base,
+# without weakening strictness anywhere else. Installing django-stubs +
+# djangorestframework-stubs and their mypy plugins is the fuller alternative.
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = ["django.*", "rest_framework.*"]
+ignore_missing_imports = true
+
+# Our model/serializer fields subclass Django/DRF classes that arrive as `Any`
+# without their stubs, so the checker reports them as un-parameterised generics.
+# The subclassing is unavoidable and correct; relax only this one check, only
+# for the integration layer.
+[[tool.mypy.overrides]]
+module = ["django_bikram.django.*"]
+disallow_any_generics = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "D", "ANN"]
+# D203/D213: mutually exclusive with the Google convention's D211/D212.
+# ANN401: `Any` is correct at the Django/DRF boundary -- to_python, from_db_value
+# and to_internal_value are contractually handed arbitrary user input, and
+# narrowing their annotations would be a lie about what callers may pass.
+ignore = ["D203", "D213", "ANN401"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
