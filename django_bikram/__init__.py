@@ -34,7 +34,7 @@ from .exceptions import (
 )
 from .formatting import format_bs, parse_bs, to_ascii_digits, to_devanagari
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "BSDate",
