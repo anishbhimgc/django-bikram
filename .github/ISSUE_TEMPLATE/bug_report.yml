@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in django-bikram behaves incorrectly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, and what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest snippet that shows the problem.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: django-bikram version
+      placeholder: "0.2.0  (python -c \"import django_bikram; print(django_bikram.__version__)\")"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Python / Django versions
+      placeholder: "Python 3.12, Django 5.2  (or: core only, no Django)"
+    validations:
+      required: true
+  - type: dropdown
+    id: provisional
+    attributes:
+      label: Are provisional (predicted) years enabled?
+      description: >
+        i.e. DJANGO_BIKRAM_PROVISIONAL_THROUGH_YEAR is set, or
+        install_provisional() is called. The default is verified-only.
+      options:
+        - "No — verified range only (default)"
+        - "Yes — provisional years enabled"
+    validations:
+      required: true
