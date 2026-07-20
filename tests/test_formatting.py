@@ -270,3 +270,17 @@ def test_every_month_name_parses_back_to_its_index() -> None:
             d = BSDate(2081, month, 1)
             assert parse_bs(format_bs(d, "%B %d %Y", lang=lang), "%B %d %Y", lang=lang)[1] == month
             assert parse_bs(format_bs(d, "%b %d %Y", lang=lang), "%b %d %Y", lang=lang)[1] == month
+
+
+def test_parse_bs_rejects_overly_long_input() -> None:
+    """A value far longer than any real date is rejected before matching.
+
+    Defence in depth for the regex parser: the input a match ever sees is
+    length-bounded, so even a pathological format string (many adjacent numeric
+    directives) cannot be driven into slow backtracking by a long value. Real
+    dates are nowhere near the bound, so nothing legitimate is refused.
+    """
+    with pytest.raises(InvalidBSDate):
+        parse_bs("9" * 10_000, "%Y-%m-%d")
+    # A normal-length value on the same format still parses.
+    assert parse_bs("2081-01-01", "%Y-%m-%d") == (2081, 1, 1)

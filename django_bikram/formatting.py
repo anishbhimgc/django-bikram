@@ -254,6 +254,15 @@ def format_bs(
 # them out of the match by group name.
 _DIGIT_CLASS = r"[0-9०-९]"
 
+# Upper bound on the length of a string parse_bs() will attempt to match. No real
+# formatted BS date — even one with a full weekday and month name in Devanagari —
+# approaches this, so it rejects nothing legitimate. It exists as defence in depth:
+# it caps the input the regex sees, so a pathological *format* string (many
+# adjacent numeric directives) cannot be driven into slow backtracking by a long
+# value. Format strings are trusted developer input (as in datetime.strptime), so
+# this is belt-and-braces, not a load-bearing control.
+_MAX_PARSE_INPUT = 256
+
 
 def _name_alternation(names: tuple[str, ...]) -> str:
     """Build a regex alternation over names, longest first.
@@ -320,6 +329,12 @@ def parse_bs(
     Weekday directives (``%A``, ``%a``) are matched but not checked against the
     parsed date, mirroring :func:`datetime.datetime.strptime`.
 
+    The format string ``fmt`` is trusted developer input, exactly as it is for
+    :func:`datetime.datetime.strptime`; do not build it from untrusted data. A
+    deliberately pathological format (many adjacent numeric directives) could make
+    the underlying regex backtrack slowly. The ``value`` being parsed is untrusted
+    and safe: it is length-bounded before matching.
+
     Args:
         value: The string to parse.
         fmt: A format string; see the module docstring for directives.
@@ -348,6 +363,11 @@ def parse_bs(
         )
     if not isinstance(value, str):
         raise InvalidBSDate(f"expected a str to parse, got {type(value).__name__!r}")
+    if len(value) > _MAX_PARSE_INPUT:
+        raise InvalidBSDate(
+            f"value is too long to be a date: {len(value)} characters "
+            f"(maximum {_MAX_PARSE_INPUT})"
+        )
 
     if numerals == "devanagari":
         digit = r"[०-९]"

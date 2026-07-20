@@ -265,15 +265,27 @@ def test_fromisoformat_rejects_non_decimal_digits(value: str) -> None:
         BSDate.fromisoformat(value)
 
 
-@pytest.mark.parametrize("value", ["२०८१-०१-०१", "２０８１-01-01"])
-def test_fromisoformat_still_accepts_devanagari_and_fullwidth(value: str) -> None:
-    """The isdecimal() guard must not cost us the numerals users actually type.
+def test_fromisoformat_accepts_devanagari() -> None:
+    """Devanagari numerals — the point of this library — parse."""
+    assert BSDate.fromisoformat("२०८१-०१-०१") == BSDate(2081, 1, 1)
 
-    Devanagari is the point of this library; fullwidth is free. Both are
-    isdecimal() and int()-able, so tightening isdigit() -> isdecimal() loses
-    neither.
+
+def test_fromisoformat_rejects_fullwidth_like_strptime() -> None:
+    """Fullwidth digits are rejected, matching parse_bs()/strptime().
+
+    int() and isdecimal() both accept fullwidth digits, so an isdecimal()-only
+    guard let "２０８１-01-01" through fromisoformat while strptime()/parse_bs()
+    rejected it — two parse entry points with two digit vocabularies. The package
+    speaks ASCII and Devanagari only; both entry points now agree.
     """
-    assert BSDate.fromisoformat(value) == BSDate(2081, 1, 1)
+    # Fullwidth digits (U+FF10..U+FF19): int() and isdecimal() accept them; the
+    # package deliberately does not, on either parse path.
+    fullwidth = "".join(chr(0xFF10 + int(c)) for c in "2081") + "-01-01"
+    with pytest.raises(InvalidBSDate):
+        BSDate.fromisoformat(fullwidth)
+    # The same input is rejected by strptime, proving the two are now aligned.
+    with pytest.raises(InvalidBSDate):
+        BSDate.strptime(fullwidth, "%Y-%m-%d")
 
 
 def test_fromisoformat_rejects_non_string() -> None:

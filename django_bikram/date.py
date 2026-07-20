@@ -33,6 +33,10 @@ __all__ = ["NEPAL_TZ", "BSDate"]
 #: bugs stop cancelling out and start producing an off-by-one **day**.
 NEPAL_TZ = datetime.timezone(datetime.timedelta(hours=5, minutes=45), "NPT")
 
+# The two numeral systems this package accepts on input: ASCII 0-9 and
+# Devanagari ०-९. Used to keep fromisoformat() aligned with parse_bs()/strptime().
+_ISO_DIGITS = frozenset("0123456789०१२३४५६७८९")
+
 
 class BSDate:
     """An immutable, hashable, totally ordered Bikram Sambat date.
@@ -217,12 +221,14 @@ class BSDate:
                 f"fromisoformat expects a str, got {type(value).__name__!r}"
             )
         parts = value.split("-")
-        # isdecimal(), not isdigit(): isdigit() also accepts the 128 Unicode
-        # characters int() refuses — superscripts, circled digits — so the guard
-        # passes and int() then raises a bare ValueError, which is not an
-        # InvalidBSDate and escapes every handler downstream as a 500. isdecimal()
-        # is an exact guard for int(), and still accepts Devanagari and fullwidth.
-        if len(parts) != 3 or not all(p.isdecimal() for p in parts):
+        # Accept only the two numeral systems this package speaks — ASCII 0-9 and
+        # Devanagari ०-९ — matching parse_bs()/strptime(). A bare isdecimal() guard
+        # would also admit fullwidth and other Unicode decimals: int() reads them,
+        # but strptime() rejects them, so the two parse entry points would disagree.
+        # Restricting to _ISO_DIGITS keeps them aligned and is still an exact guard
+        # for int() (which reads both ASCII and Devanagari), so no bare ValueError
+        # can escape downstream as a 500.
+        if len(parts) != 3 or not all(p and _ISO_DIGITS.issuperset(p) for p in parts):
             raise InvalidBSDate(f"invalid isoformat string: {value!r}")
         year, month, day = (int(p) for p in parts)
         return cls(year, month, day)

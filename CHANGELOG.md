@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `BSDate.fromisoformat()` now accepts only ASCII and Devanagari digits, matching
+  `strptime()`/`parse_bs()`. Previously fullwidth digits (`"２０８１-01-01"`) parsed
+  through `fromisoformat` but were rejected by the other parse paths — the two
+  entry points now agree on the numeral systems this package speaks.
+
+### Security
+
+- `parse_bs()`/`strptime()` now length-bound the value before matching, as defence
+  in depth: a pathological format string (many adjacent numeric directives) can no
+  longer be driven into slow regex backtracking by a long value. Format strings
+  remain trusted developer input, as with `datetime.strptime`.
+
 ## [0.2.0] - 2026-07-19
 
 ### Added
