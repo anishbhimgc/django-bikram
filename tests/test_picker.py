@@ -72,6 +72,40 @@ def test_shipped_assets_are_self_contained() -> None:
 # --- the widget --------------------------------------------------------
 
 
+def test_panel_escapes_clipping_ancestors() -> None:
+    """The panel must be position:fixed, or Django admin hides it entirely.
+
+    An absolutely-positioned popover is clipped by any ancestor with
+    overflow != visible. Django admin's `.form-row` sets `overflow: hidden`, so
+    in 0.3.0 the calendar rendered correctly -- 31 day buttons, 274x315px, not
+    hidden -- and was invisible anyway, in the one place the widget matters
+    most. Only a real browser caught it; nothing here can, so this pins the
+    property that fixes it.
+    """
+    css = PICKER_CSS.read_text(encoding="utf-8")
+    # Match the rule itself, anchored at line start -- ".bs-dp-panel" also
+    # appears in the file's header comment.
+    rule = re.search(r"^\.bs-dp-panel\s*\{(.*?)^\}", css, re.S | re.M)
+    assert rule is not None, "no .bs-dp-panel rule found"
+    assert "position: fixed" in rule.group(1)
+    assert "position: absolute" not in rule.group(1)
+
+
+def test_panel_is_positioned_from_javascript() -> None:
+    """position:fixed means CSS cannot place the panel; JS must, and must re-place.
+
+    Its size depends on the month (5 or 6 week rows), and it has to stay
+    attached to its input when an ancestor scrolls.
+    """
+    js = PICKER_JS.read_text(encoding="utf-8")
+    assert "function place()" in js
+    assert "getBoundingClientRect" in js
+    # Re-placed on open, after every re-render, and while scrolling or resizing.
+    assert js.count("place();") >= 2
+    assert 'addEventListener("scroll", place, true)' in js
+    assert 'removeEventListener("scroll", place, true)' in js
+
+
 def test_picker_declares_its_media() -> None:
     """Django's Media handles deduplication across many fields on a page."""
     media = str(BSDatePickerInput().media)

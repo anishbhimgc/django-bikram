@@ -42,7 +42,7 @@ from .fiscal import (
 )
 from .formatting import format_bs, parse_bs, to_ascii_digits, to_devanagari
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "BSDate",

@@ -248,6 +248,10 @@
         close();
       }));
       panel.appendChild(foot);
+
+      // Month length changes the grid's height, so re-place after every
+      // re-render, not just on open.
+      place();
     }
 
     function dayButton(d, sel, now) {
@@ -285,19 +289,50 @@
       return btn;
     }
 
+    // The panel is position:fixed, so it is placed from here rather than by
+    // CSS. Absolute positioning would be clipped by any ancestor with
+    // overflow != visible -- Django admin's .form-row is exactly that.
+    function place() {
+      if (panel.hidden) return;
+      var anchor = input.getBoundingClientRect();
+      // Measure at the origin first: the panel's size depends on the month
+      // (5 or 6 week rows), so it cannot be cached.
+      panel.style.left = "0px";
+      panel.style.top = "0px";
+      var box = panel.getBoundingClientRect();
+      var viewportW = document.documentElement.clientWidth;
+      var viewportH = document.documentElement.clientHeight;
+      var GAP = 4, EDGE = 8;
+
+      var left = Math.min(anchor.left, viewportW - box.width - EDGE);
+      var top = anchor.bottom + GAP;
+      if (top + box.height > viewportH - EDGE) {
+        var above = anchor.top - box.height - GAP;
+        if (above >= EDGE) top = above; // flip up when there is room
+      }
+      panel.style.left = Math.max(EDGE, left) + "px";
+      panel.style.top = Math.max(EDGE, top) + "px";
+    }
+
     function open() {
       if (!panel.hidden) return;
       view = clamp(selected() || todayBs() || { year: MIN_YEAR, month: 1 });
       render();
       panel.hidden = false;
+      place();
       document.addEventListener("mousedown", onOutside, true);
       document.addEventListener("keydown", onKey, true);
+      // Capture phase, so scrolling any ancestor keeps the panel attached.
+      window.addEventListener("scroll", place, true);
+      window.addEventListener("resize", place);
     }
 
     function close() {
       panel.hidden = true;
       document.removeEventListener("mousedown", onOutside, true);
       document.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
     }
 
     function onOutside(event) {

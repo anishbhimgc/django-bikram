@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-23
+
+### Fixed
+
+- **The date picker was invisible in the Django admin.** An absolutely
+  positioned popover is clipped by any ancestor with `overflow != visible`, and
+  admin's `.form-row` sets `overflow: hidden`. The calendar rendered correctly —
+  31 day buttons, 274x315px, `hidden` false — and was clipped to a few pixels
+  anyway, in the one place the widget matters most. The panel is now
+  `position: fixed` and placed from JavaScript, which escapes every clipping
+  ancestor: admin form rows, modals, scrolling tables, inline formsets. It
+  re-places after each re-render (month length changes the grid's height) and
+  while any ancestor scrolls or the window resizes, and flips above the input
+  when there is no room below.
+
+  Only a real browser could catch this, so the fix is pinned by two structural
+  guards in `tests/test_picker.py` rather than left to the next manual check.
+  Calendar arithmetic is untouched — still byte-identical across all 40,178
+  dates in the verified range.
+
 ## [0.3.0] - 2026-07-22
 
 ### Read this first if you are upgrading

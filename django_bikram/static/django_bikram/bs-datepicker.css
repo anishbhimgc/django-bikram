@@ -20,10 +20,13 @@
   --bs-dp-accent: #0b6bcb;
   --bs-dp-accent-fg: #fff;
 
-  position: absolute;
+  /* Fixed, not absolute, and positioned from JS. An absolutely-positioned
+     panel is clipped by any ancestor with overflow != visible -- and Django
+     admin's .form-row sets overflow: hidden, so the calendar was invisible in
+     the one place it matters most. Fixed positioning escapes every clipping
+     ancestor, including modals, scrolling tables and inline formsets. */
+  position: fixed;
   z-index: 1000;
-  top: calc(100% + 4px);
-  left: 0;
   min-width: 16rem;
   padding: 0.5rem;
   border: 1px solid var(--bs-dp-border);
