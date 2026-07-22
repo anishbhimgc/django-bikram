@@ -360,6 +360,10 @@ class BSDateField(models.DateField):
     def formfield(self, **kwargs: Any) -> Any:
         """Return the default form field for this model field.
 
+        Any Gregorian admin date widget handed in is swapped for
+        :class:`~django_bikram.django.forms.BSDateInput`; see
+        :func:`_is_gregorian_admin_widget` for why that matters.
+
         Args:
             **kwargs: Overrides passed to the form field.
 
@@ -367,11 +371,55 @@ class BSDateField(models.DateField):
             A :class:`~django_bikram.django.forms.BSDateField` form field.
         """
         from .forms import BSDateField as BSDateFormField
+        from .forms import BSDateInput
 
         defaults: dict[str, Any] = {"form_class": BSDateFormField}
         defaults.update(kwargs)
+        if _is_gregorian_admin_widget(defaults.get("widget")):
+            # Keep the admin's sizing so the field still looks native, but drop
+            # the vDateField class the Gregorian calendar JS binds to.
+            defaults["widget"] = BSDateInput(attrs={"size": "10"})
         # Skip DateField.formfield, which would force a DateField form class.
         return super(models.DateField, self).formfield(**defaults)
+
+
+def _is_gregorian_admin_widget(widget: Any) -> bool:
+    """Return whether ``widget`` is the admin's **Gregorian** date widget.
+
+    ``django.contrib.admin`` maps ``models.DateField`` to ``AdminDateWidget`` in
+    ``FORMFIELD_FOR_DBFIELD_DEFAULTS``, and resolves that mapping by walking the
+    field's MRO -- so :class:`BSDateField`, which subclasses ``DateField`` to
+    inherit every date lookup, inherits the widget too.
+
+    That widget is not neutral. It renders ``class="vDateField"``, which is the
+    hook ``calendar.js`` and ``DateTimeShortcuts.js`` bind to, giving the field a
+    **Gregorian** calendar popup and a "Today" shortcut that writes the Gregorian
+    date. Into a Bikram Sambat field, ``2026-07-22`` then reads back as 2026 BS
+    -- 1969 AD. A 57-year error produced by the most-clicked button in the admin.
+
+    This is the same trap as DRF's ``ModelSerializer`` field mapping (see
+    :func:`django_bikram.django.drf.register_serializer_field`), arriving by the
+    same route: subclassing ``DateField`` is what buys the lookups, and it is
+    also what makes a third party assume the value is Gregorian. There the caller
+    has to opt in, because the fix mutates a third-party class; here the fix is
+    local to our own ``formfield()``, so it is applied by default.
+
+    Args:
+        widget: A widget instance, a widget class, or ``None``.
+
+    Returns:
+        ``True`` if ``widget`` is an ``AdminDateWidget`` (or a subclass).
+        ``False`` when ``widget`` is ``None`` or ``django.contrib.admin`` is not
+        installed, since neither can produce the Gregorian picker.
+    """
+    if widget is None:
+        return False
+    try:
+        from django.contrib.admin.widgets import AdminDateWidget
+    except ImportError:  # pragma: no cover - admin is an optional contrib app
+        return False
+    cls = widget if isinstance(widget, type) else type(widget)
+    return issubclass(cls, AdminDateWidget)
 
 
 def _register_migration_serializer() -> None:

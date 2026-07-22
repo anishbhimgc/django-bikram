@@ -384,6 +384,55 @@ class BSDate:
         """
         return is_verified_year(self._year)
 
+    # -- fiscal year -----------------------------------------------------
+
+    @property
+    def fiscal_year(self) -> int:
+        """The BS year this date's Nepali fiscal year **starts** in.
+
+        Nepal's fiscal year runs 1 Shrawan to the last of Ashadh, so a date in
+        Baishakh belongs to the fiscal year that opened the *previous* BS year.
+        See :mod:`django_bikram.fiscal`.
+
+        Example:
+            >>> BSDate(2081, 4, 1).fiscal_year    # 1 Shrawan opens FY 2081/82
+            2081
+            >>> BSDate(2081, 3, 31).fiscal_year   # Ashadh closes FY 2080/81
+            2080
+        """
+        from .fiscal import fiscal_year
+
+        return fiscal_year(self)
+
+    @property
+    def fiscal_year_label(self) -> str:
+        """This date's fiscal year written the Nepali way, ``'2081/82'``.
+
+        Example:
+            >>> BSDate(2081, 4, 1).fiscal_year_label
+            '2081/82'
+        """
+        from .fiscal import fiscal_year_label
+
+        return fiscal_year_label(self)
+
+    @property
+    def fiscal_quarter(self) -> int:
+        """Which quarter of its fiscal year this date falls in, 1 through 4.
+
+        Q1 opens in Shrawan; Q4 (Baishakh to Ashadh) closes the fiscal year and
+        therefore carries the higher BS year.
+
+        Example:
+            >>> BSDate(2081, 4, 1).fiscal_quarter
+            1
+            >>> BSDate(2082, 1, 1).fiscal_quarter
+            4
+        """
+        from .fiscal import fiscal_quarter
+
+        return fiscal_quarter(self)
+
     # -- formatting ------------------------------------------------------
 
     def isoformat(self) -> str:

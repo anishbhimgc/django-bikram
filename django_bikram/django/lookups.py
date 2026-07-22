@@ -51,12 +51,15 @@ import datetime
 from django.db.models import Q
 
 from ..convert import bs_to_ad, days_in_month, days_in_year
+from ..fiscal import fiscal_quarter_bounds, fiscal_year_bounds
 
 __all__ = [
     "bs_year_bounds",
     "bs_month_bounds",
     "bs_year_q",
     "bs_month_q",
+    "bs_fiscal_year_q",
+    "bs_fiscal_quarter_q",
 ]
 
 
@@ -156,4 +159,63 @@ def bs_month_q(field: str, year: int, month: int) -> Q:
         >>> Invoice.objects.filter(bs_month_q("issued_on", 2081, 1))  # doctest: +SKIP
     """
     start, end = bs_month_bounds(year, month)
+    return Q(**{f"{field}__gte": start, f"{field}__lt": end})
+
+
+def bs_fiscal_year_q(field: str, start_year: int) -> Q:
+    """Build a ``Q`` matching rows inside a Nepali fiscal year.
+
+    Nepal's fiscal year runs 1 Shrawan to the last of Ashadh, so it spans two BS
+    years -- which is exactly why it needs a helper: no combination of the
+    built-in lookups expresses it, and it is a single contiguous range of AD
+    dates. See :mod:`django_bikram.fiscal`.
+
+    Args:
+        field: The field name (or lookup path).
+        start_year: The BS year the fiscal year starts in -- 2081 for FY
+            2081/82.
+
+    Returns:
+        A :class:`~django.db.models.Q` object compiling to one index range scan.
+
+    Raises:
+        DateOutOfRange: If either end of the fiscal year is outside the verified
+            calendar range.
+
+    Example:
+        >>> q = bs_fiscal_year_q("issued_on", 2081)
+        >>> dict(q.children) == {
+        ...     "issued_on__gte": datetime.date(2024, 7, 16),
+        ...     "issued_on__lt": datetime.date(2025, 7, 17),
+        ... }
+        True
+    """
+    start, end = fiscal_year_bounds(start_year)
+    return Q(**{f"{field}__gte": start, f"{field}__lt": end})
+
+
+def bs_fiscal_quarter_q(field: str, start_year: int, quarter: int) -> Q:
+    """Build a ``Q`` matching rows inside one quarter of a Nepali fiscal year.
+
+    Args:
+        field: The field name (or lookup path).
+        start_year: The BS year the fiscal year starts in.
+        quarter: The quarter number, 1 through 4.
+
+    Returns:
+        A :class:`~django.db.models.Q` object compiling to one index range scan.
+
+    Raises:
+        InvalidBSDate: If ``quarter`` is not in 1..4.
+        DateOutOfRange: If the quarter is outside the verified calendar range.
+
+    Example:
+        >>> q = bs_fiscal_quarter_q("issued_on", 2081, 1)
+        >>> dict(q.children) == {
+        ...     "issued_on__gte": datetime.date(2024, 7, 16),
+        ...     "issued_on__lt": datetime.date(2024, 10, 17),
+        ... }
+        True
+    """
+    start, end = fiscal_quarter_bounds(start_year, quarter)
     return Q(**{f"{field}__gte": start, f"{field}__lt": end})

@@ -7,10 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.1] - 2026-07-22
+## [0.3.0] - 2026-07-22
+
+### Added
+
+- **`django_bikram.fiscal`** — Nepali fiscal year (1 Shrawan to the last of
+  Ashadh) and quarter arithmetic. `fiscal_year()`, `fiscal_year_label()`
+  (`'2081/82'`), `fiscal_quarter()`, and half-open `fiscal_year_bounds()` /
+  `fiscal_quarter_bounds()`, plus `BSDate.fiscal_year`,
+  `.fiscal_year_label` and `.fiscal_quarter`. Derived entirely from the one
+  start-month rule, so there is no second calendar table to keep in step.
+- **`bs_fiscal_year_q()` / `bs_fiscal_quarter_q()`** in
+  `django_bikram.django.lookups` — index-friendly `Q` helpers, matching the
+  existing `bs_year_q` / `bs_month_q`. A fiscal year spans two BS years, so no
+  combination of built-in lookups expresses it.
+- **`BSDatePickerInput`** — a bundled Bikram Sambat calendar widget: 13 kB of
+  vanilla JavaScript, no npm, no build step, no CDN, no new dependency. The
+  calendar table is compiled into the asset as a 1.3 kB string
+  (`encode_verified_calendar()`), so the browser does real BS arithmetic instead
+  of round-tripping to the server; a test asserts the shipped copy still equals
+  the Python table. Verified against Python for all 40,178 dates in the range,
+  both directions. Progressive enhancement — the field is still a text input,
+  and every value is re-validated server-side.
+- **`BSDateFieldListFilter`** in `django_bikram.django.admin` — an admin
+  `list_filter` whose periods are Bikram Sambat. Django resolves `BSDateField`
+  through `isinstance(f, models.DateField)` to its own Gregorian filter, whose
+  buckets carry no calendar in their labels: "This month" selects the *Gregorian*
+  month, which spans two BS months and, in mid-July, two fiscal years. The
+  replacement offers Today, Past 7 days, This month, This year and This fiscal
+  year, each still a single index range scan, and omits any bucket that would
+  reach past the verified table rather than approximating it. Opt in per field,
+  or globally with `register_list_filter()`. `date_hierarchy` remains Gregorian
+  and is now documented as such — it is built by a template tag with no registry
+  to hook.
+- `django_bikram.apps.DjangoBikramConfig` — add `"django_bikram"` to
+  `INSTALLED_APPS` to make the picker's static assets discoverable by
+  `collectstatic`. Needed for the picker only; nothing else in the package
+  requires app registration, and registering it has no other effect.
+- **`docs/migrating.md`** — step-by-step migration from
+  `django-nepali-datetime-field` (no data migration needed; the storage is
+  already compatible), from `django-npdt` (`CharField` → `BSDateField`, with a
+  batched backfill), and from hand-rolled string or three-integer storage.
 
 ### Fixed
 
+- **The Django admin no longer renders a Gregorian date picker on a
+  `BSDateField`.** `django.contrib.admin` maps `models.DateField` to
+  `AdminDateWidget` by walking the field's MRO, so `BSDateField` inherited it —
+  along with the `vDateField` class that `calendar.js` and
+  `DateTimeShortcuts.js` bind to. That gave the field a Gregorian calendar popup
+  and a "Today" button writing the Gregorian date, which read back as Bikram
+  Sambat: `2026-07-22` → 2026 BS → 1969 AD. `formfield()` now swaps that widget
+  for `BSDateInput`. Widgets you choose yourself are untouched.
 - **`serializers.serialize("json"|"python", ...)` no longer emits Gregorian
   digits** for an in-memory instance that was assigned a raw `datetime.date`.
   Those serializers pass a value through untouched when Django's
@@ -23,6 +71,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `model_to_dict()` — and therefore `ModelForm` initial data — normalises an
   assigned `datetime.date` the same way, instead of rendering the Gregorian
   digits into a Bikram Sambat field.
+- **A form field no longer overwrites a language set on its widget.**
+  `BSDateField(widget=BSDateInput(lang="ne"))` was silently reset to the field's
+  default `"en"`, making the explicit argument useless. The widget now records
+  which settings were passed to it, and the field fills in only the rest.
+- **A form can now parse what it just rendered.** A widget set to `lang="ne"`
+  emits `०१ वैशाख २०८१`, which a field left at the default `"en"` rejected as
+  invalid. The field now adopts a language set on its widget (and the field
+  still wins if both were set). Likewise a widget `format` outside
+  `DEFAULT_INPUT_FORMATS` is now accepted on input — unless you passed
+  `input_formats` yourself, which remains an exact statement of what is
+  accepted.
+- **`ProvisionalDateWarning` is attributed to the caller, so it is no longer
+  silenced after the first use.** A fixed `stacklevel` pointed every such warning
+  at `django_bikram/date.py`; because `warnings` deduplicates on the *attributed*
+  module and line, the second module in a program to touch provisional data got
+  no warning at all and silently used unverified dates. The stacklevel is now
+  computed by walking out to the first frame outside the package, which is
+  correct for every entry point (`BSDate()`, `bs_to_ad()`, `ad_to_bs()`,
+  `check_bs_date()`) — their depths differ, so no constant could have worked.
+- **The DRF field parses its own output.** `BSDateField(format="%d.%m.%Y")`
+  emitted `01.01.2081` and then rejected it, so a client POSTing back a record it
+  had just fetched failed validation on the API's own output. The render format
+  is now always accepted on input, unless you pass `input_formats` explicitly.
 - `BSDate.fromisoformat()` now accepts only ASCII and Devanagari digits, matching
   `strptime()`/`parse_bs()`. Previously fullwidth digits (`"２０８１-01-01"`) parsed
   through `fromisoformat` but were rejected by the other parse paths — the two

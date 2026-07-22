@@ -21,8 +21,11 @@ Neither walks day by day, so a date in 2083 BS costs the same as one in 1975.
 from __future__ import annotations
 
 import datetime
+import os
+import sys
 import warnings
 from bisect import bisect_right
+from typing import Any
 
 from .calendar_data import (
     ANCHOR_AD,
@@ -40,16 +43,57 @@ from .exceptions import DateOutOfRange, InvalidBSDate, ProvisionalDateWarning
 __all__ = ["bs_to_ad", "ad_to_bs", "days_in_month", "days_in_year", "check_bs_date"]
 
 
-def _warn_if_provisional(year: int, *, stacklevel: int) -> None:
+#: This package's own directory. Frames inside it are not "the caller"; see
+#: :func:`_caller_stacklevel`. Includes subpackages, since it is a prefix match.
+_PACKAGE_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+
+def _caller_stacklevel() -> int:
+    """Return the ``stacklevel`` that attributes a warning to the caller.
+
+    A fixed ``stacklevel`` cannot work here, because the number of frames
+    between the warning and user code depends on which entry point was used:
+    ``BSDate(...)`` goes through ``__init__`` then :func:`check_bs_date`, a bare
+    :func:`check_bs_date` call is one frame shallower, and :func:`bs_to_ad` adds
+    one of its own. A constant fitted to any one of them mis-attributes the
+    others -- which previously pointed every warning at ``date.py`` regardless
+    of the caller.
+
+    That is not cosmetic. :mod:`warnings` deduplicates on the *attributed*
+    module and line, so a warning permanently attributed inside this package
+    dedupes across the whole program: the second module to touch provisional
+    data got no warning at all, silently using unverified dates. Walking to the
+    first frame outside the package restores true per-call-site reporting.
+
+    Returns:
+        The number of frames from :func:`_warn_if_provisional` out to the first
+        caller that is not part of this package. Falls back to the full stack
+        depth if every frame is internal (as at import time).
+    """
+    level = 1  # stacklevel 1 is _warn_if_provisional itself
+    try:
+        frame: Any = sys._getframe(1)
+    except (AttributeError, ValueError):  # pragma: no cover - non-CPython
+        return 3
+    while frame is not None:
+        filename = os.path.abspath(frame.f_code.co_filename)
+        if not filename.startswith(_PACKAGE_ROOT + os.sep):
+            return level
+        frame = frame.f_back
+        level += 1
+    return level
+
+
+def _warn_if_provisional(year: int) -> None:
     """Emit :class:`ProvisionalDateWarning` for a non-verified year.
 
-    Verified years pass silently. The warning fires from ``stacklevel`` frames
-    up so it points at the caller's code, and -- under the default warning
-    filter -- shows once per call site rather than on every conversion.
+    Verified years pass silently. The warning is attributed to the first frame
+    outside this package, so it points at the caller's code and -- under the
+    default warning filter -- really does show once per call site, rather than
+    once for the whole program. See :func:`_caller_stacklevel`.
 
     Args:
         year: The BS year being used.
-        stacklevel: Frames to skip so the warning is attributed to user code.
     """
     if not is_verified_year(year):
         warnings.warn(
@@ -58,7 +102,7 @@ def _warn_if_provisional(year: int, *, stacklevel: int) -> None:
             f"official calendar by a day (verified through {VERIFIED_MAX_BS_YEAR} "
             f"BS). Use BSDate.is_verified to check.",
             ProvisionalDateWarning,
-            stacklevel=stacklevel + 1,
+            stacklevel=_caller_stacklevel(),
         )
 
 
@@ -193,7 +237,7 @@ def check_bs_date(year: int, month: int, day: int) -> None:
         )
     # Only warn once the date is known to be well-formed, so a bad provisional
     # date reports the real error rather than a warning about the year.
-    _warn_if_provisional(year, stacklevel=2)
+    _warn_if_provisional(year)
 
 
 def bs_to_ad(year: int, month: int, day: int) -> datetime.date:
@@ -260,7 +304,7 @@ def ad_to_bs(value: datetime.date) -> tuple[int, int, int]:
     index = bisect_right(_YEAR_START_OFFSET, delta) - 1
     year = _YEARS[index]
     remainder = delta - _YEAR_START_OFFSET[index]
-    _warn_if_provisional(year, stacklevel=2)
+    _warn_if_provisional(year)
 
     for month_index, length in enumerate(BS_MONTH_DAYS[year]):
         if remainder < length:

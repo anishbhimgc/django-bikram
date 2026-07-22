@@ -164,3 +164,32 @@ def test_register_serializer_field_fixes_modelserializer() -> None:
     finally:
         # Restore, so this test cannot leak into the one above via ordering.
         serializers.ModelSerializer.serializer_field_mapping = original
+
+
+def test_field_parses_its_own_output_for_any_format() -> None:
+    """A client must be able to POST back a value the API just returned.
+
+    With format="%d.%m.%Y" the field emitted "01.01.2081" and then rejected it,
+    so round-tripping a fetched record failed validation on the API's own
+    output. The render format is now always accepted on input.
+    """
+    date = BSDate(2081, 1, 1)
+    for kwargs in (
+        {},
+        {"format": "%d %B %Y"},
+        {"format": "%d.%m.%Y"},
+        {"format": "%Y/%m/%d"},
+        {"format": "%d %B %Y", "lang": "ne", "numerals": "devanagari"},
+    ):
+        field = BSDateField(**kwargs)
+        rendered = field.to_representation(date)
+        assert field.to_internal_value(rendered) == date, kwargs
+
+
+def test_explicit_input_formats_are_not_widened() -> None:
+    """Passing input_formats states exactly what is accepted, and nothing else."""
+    field = BSDateField(format="%d.%m.%Y", input_formats=["%Y-%m-%d"])
+    assert field.input_formats == ("%Y-%m-%d",)
+    assert field.to_internal_value("2081-01-01") == BSDate(2081, 1, 1)
+    with pytest.raises(serializers.ValidationError):
+        field.to_internal_value("01.01.2081")

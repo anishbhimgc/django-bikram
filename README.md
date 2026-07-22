@@ -188,6 +188,42 @@ per-row work.
 
 ---
 
+## Fiscal year
+
+Nepal's fiscal year (आर्थिक वर्ष) runs **1 Shrawan to the last day of Ashadh**,
+and is named for the year it starts in: **FY 2081/82**.
+
+```python
+d = BSDate(2082, 1, 1)          # Baishakh — the *closing* quarter of FY 2081/82
+
+d.fiscal_year                   # 2081
+d.fiscal_year_label             # '2081/82'
+d.fiscal_quarter                # 4
+```
+
+Because a fiscal year spans two BS years, no combination of built-in lookups
+expresses it — so it gets the same half-open range treatment as a BS year:
+
+```python
+from django_bikram.django.lookups import bs_fiscal_year_q, bs_fiscal_quarter_q
+from django_bikram.fiscal import fiscal_year_bounds
+
+Invoice.objects.filter(bs_fiscal_year_q("issued_on", 2081))
+Invoice.objects.filter(bs_fiscal_quarter_q("issued_on", 2081, 1))
+
+fiscal_year_bounds(2081)   # (date(2024, 7, 16), date(2025, 7, 17)) — half-open
+```
+
+Quarters are the fiscal year cut into three-month blocks: Q1 Shrawan–Ashwin,
+Q2 Kartik–Poush, Q3 Magh–Chaitra, Q4 Baishakh–Ashadh. **Q4 carries the higher BS
+year** — Baishakh 2082 belongs to FY 2081/82, not FY 2082/83. That is the part
+everyone gets wrong, so it is checked day by day in the test suite.
+
+Note that `fiscal_year_bounds(2084)` raises: a fiscal year reaches into the next
+BS year, so it runs out one year before the calendar table does.
+
+---
+
 ## `BSDate`
 
 Immutable (`__slots__`), hashable, totally ordered, and shaped like
@@ -318,6 +354,73 @@ class InvoiceForm(forms.ModelForm):
 The widget is a plain text input, not `<input type="date">` — the browser's
 native picker only speaks Gregorian and would rewrite the value. It emits a
 `data-bs-date="2081-01-01"` attribute for JS date pickers to hook.
+
+In the **Django admin**, `BSDateField` would otherwise inherit `AdminDateWidget`
+(admin maps `models.DateField` to it by walking the MRO), whose `vDateField`
+class binds Django's *Gregorian* calendar popup and a "Today" button writing the
+Gregorian date. `formfield()` swaps that widget out. Widgets you choose yourself
+are left alone.
+
+### Admin list filters
+
+The same MRO lookup gives `BSDateField` Django's Gregorian `DateFieldListFilter`,
+whose buckets are labelled with no calendar at all. "This month" selects the
+*Gregorian* month — which spans two BS months and, in mid-July, two fiscal years:
+
+```
+"This month"  →  AD 2026-07-01 .. 2026-08-01  =  BS 2083-03-17 .. 2083-04-16
+the BS month  →  AD 2026-07-17 .. 2026-08-17
+```
+
+Use the BS-aware filter instead. It offers *Today*, *Past 7 days*, *This month*,
+*This year* and *This fiscal year*, each a half-open range on the indexed column:
+
+```python
+from django_bikram.django.admin import BSDateFieldListFilter
+
+class InvoiceAdmin(admin.ModelAdmin):
+    list_filter = [("issued_on", BSDateFieldListFilter)]
+```
+
+Or make it the default for every `BSDateField` in the project:
+
+```python
+class MyAppConfig(AppConfig):
+    def ready(self):
+        from django_bikram.django.admin import register_list_filter
+        register_list_filter()
+```
+
+⚠️ **`date_hierarchy` is not covered.** It is rendered by a Django template tag
+that builds `__year`/`__month`/`__day` directly, with no registry to hook — so it
+drills down by **AD**, showing a 1 Baishakh 2081 record under "2024". Prefer the
+filter above.
+
+### Date picker
+
+```python
+# settings.py — required for the picker only; the rest of the package
+# needs no app registration.
+INSTALLED_APPS = [..., "django_bikram"]
+```
+
+```python
+from django_bikram.django import BSDatePickerInput
+
+widgets = {"issued_on": BSDatePickerInput(lang="ne", numerals="devanagari")}
+```
+
+A Bikram Sambat calendar in 13 kB of vanilla JavaScript (4 kB gzipped), plus
+2.8 kB of CSS — **no npm, no build
+step, no CDN, and no new dependency**. The verified calendar is compiled into the
+asset as a 1.3 kB string, so the browser does real BS arithmetic rather than
+asking the server on every click; a test asserts that copy still equals the
+Python table, and the two agree on all 40,178 dates in the range.
+
+It is progressive enhancement: the field is the same text input underneath, so it
+works with JavaScript off, and every value the picker writes is re-validated
+server-side exactly like typed input. Needs `django.contrib.staticfiles` and
+`{{ form.media }}` in your template; inside the admin both are already handled.
 
 ### DRF
 
@@ -500,13 +603,23 @@ mypy django_bikram/
 
 ---
 
+## Migrating from another package
+
+Coming from `django-nepali-datetime-field`, `django-npdt`, or hand-rolled
+string/integer storage? See **[docs/migrating.md](https://github.com/anishbhimgc/django-bikram/blob/main/docs/migrating.md)**.
+
+If you are on `django-nepali-datetime-field` the storage is already compatible —
+it is a field swap with **no data migration**.
+
+---
+
 ## Deliberately out of scope
 
 - **BS time/datetime types.** The calendar defines days, not clocks. Use a
   normal `DateTimeField` for instants.
 - **`__bs_year` / `__bs_month` transforms.** See above.
-- **Fiscal-year helpers, holiday calendars, Panchanga tithi.** Different
-  problems with different data sources.
+- **Holiday calendars and Panchanga tithi.** Different problems with different
+  data sources, and neither is derivable from month lengths.
 
 ## License
 

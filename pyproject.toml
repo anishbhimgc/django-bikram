@@ -103,9 +103,15 @@ ignore_missing_imports = true
 # without their stubs, so the checker reports them as un-parameterised generics.
 # The subclassing is unavoidable and correct; relax only this one check, only
 # for the integration layer.
+#
+# disallow_untyped_calls likewise: Django itself ships no annotations, so calling
+# into it -- e.g. FieldListFilter.register() -- is a call to an untyped function
+# by definition. Both relaxations are scoped to the integration layer; the core
+# package stays fully strict.
 [[tool.mypy.overrides]]
 module = ["django_bikram.django.*"]
 disallow_any_generics = false
+disallow_untyped_calls = false
 
 [tool.ruff]
 line-length = 88

@@ -49,9 +49,9 @@ class BSDateField(serializers.Field):
         issued_on = BSDateField(format="%d %B %Y", lang="ne",
                                 numerals="devanagari")
 
-    Note that a non-ISO ``format`` is still accepted on input only if a
-    matching entry exists in ``input_formats``; the two are configured
-    independently, as in DRF's own ``DateField``.
+    The field always accepts its own ``format`` back on input, so a client can
+    POST a value it just fetched. Pass ``input_formats`` explicitly to state
+    exactly what is accepted and nothing else.
     """
 
     default_error_messages = {
@@ -81,7 +81,8 @@ class BSDateField(serializers.Field):
         Args:
             format: strftime-style format for output.
             input_formats: Formats accepted on input; defaults to
-                :data:`django_bikram.django.forms.DEFAULT_INPUT_FORMATS`.
+                :data:`django_bikram.django.forms.DEFAULT_INPUT_FORMATS`, plus
+                ``format`` itself.
             lang: Language for month and weekday names, in both directions.
             numerals: Numeral system for output digits.
             input_numerals: Numeral system accepted on input. ``"auto"``
@@ -90,6 +91,15 @@ class BSDateField(serializers.Field):
         """
         self.format = format
         self.input_formats = tuple(input_formats or DEFAULT_INPUT_FORMATS)
+        # A serializer must be able to parse what it just rendered: with
+        # format="%d.%m.%Y" this field emitted "01.01.2081" and then rejected it,
+        # so a client round-tripping a record it had just fetched got a
+        # validation error on the API's own output. Only when input_formats was
+        # left to us -- passing it explicitly is a statement of exactly what is
+        # accepted, and widening that would override the caller. Appended, so
+        # the default order still decides ambiguous cases.
+        if input_formats is None and format not in self.input_formats:
+            self.input_formats = (*self.input_formats, format)
         self.lang = lang
         self.numerals = numerals
         self.input_numerals = input_numerals

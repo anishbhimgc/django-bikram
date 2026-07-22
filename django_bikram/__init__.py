@@ -32,9 +32,17 @@ from .exceptions import (
     InvalidBSDate,
     ProvisionalDateWarning,
 )
+from .fiscal import (
+    FISCAL_START_MONTH,
+    fiscal_quarter,
+    fiscal_quarter_bounds,
+    fiscal_year,
+    fiscal_year_bounds,
+    fiscal_year_label,
+)
 from .formatting import format_bs, parse_bs, to_ascii_digits, to_devanagari
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 __all__ = [
     "BSDate",
@@ -51,6 +59,12 @@ __all__ = [
     "parse_bs",
     "to_devanagari",
     "to_ascii_digits",
+    "fiscal_year",
+    "fiscal_year_label",
+    "fiscal_quarter",
+    "fiscal_year_bounds",
+    "fiscal_quarter_bounds",
+    "FISCAL_START_MONTH",
     "MIN_BS_YEAR",
     "MAX_BS_YEAR",
     "VERIFIED_MIN_BS_YEAR",

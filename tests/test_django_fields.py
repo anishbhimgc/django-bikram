@@ -379,6 +379,34 @@ def test_bsdate_default_serialises_in_a_migration() -> None:
     assert eval(string, {"django_bikram": __import__("django_bikram")}) == BSDate(2081, 1, 1)
 
 
+def test_admin_gregorian_date_widget_is_replaced() -> None:
+    """The admin's Gregorian calendar picker never reaches a BS field.
+
+    django.contrib.admin maps models.DateField to AdminDateWidget by walking the
+    field's MRO, so BSDateField inherits it. That widget renders
+    class="vDateField", which calendar.js and DateTimeShortcuts.js bind to --
+    giving a Gregorian popup and a "Today" button that writes the Gregorian date
+    into a Bikram Sambat field. 2026-07-22 would read back as 2026 BS: 1969 AD.
+    """
+    from django.contrib.admin.widgets import AdminDateWidget
+
+    from django_bikram.django.forms import BSDateInput
+
+    # Instance and class both, since Django passes either.
+    for widget in (AdminDateWidget(), AdminDateWidget):
+        form_field = BSDateField().formfield(widget=widget)
+        assert isinstance(form_field.widget, BSDateInput)
+        assert "vDateField" not in form_field.widget.render("issued_on", None)
+
+    # The swap targets the admin's Gregorian widget only: any other widget the
+    # caller chose deliberately is left alone.
+    from django import forms
+
+    plain = BSDateField().formfield(widget=forms.TextInput).widget
+    assert isinstance(plain, forms.TextInput)
+    assert not isinstance(plain, BSDateInput)
+
+
 def test_formfield_is_the_bs_form_field() -> None:
     """The model field hands back a BS-aware form field."""
     from django_bikram.django.forms import BSDateField as BSDateFormField

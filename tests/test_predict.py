@@ -11,6 +11,7 @@ paths run in a clean subprocess rather than polluting the rest of the suite.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import textwrap
@@ -283,3 +284,58 @@ def test_two_digit_year_is_stable_across_provisional_install() -> None:
         """,
     )
     assert out.strip() == "ok"
+
+
+# -- provisional warning attribution -----------------------------------------
+
+
+def test_provisional_warning_is_attributed_to_the_caller(tmp_path) -> None:
+    """Each call site must get its own warning, not one for the whole program.
+
+    warnings deduplicates on the *attributed* module and line. A fixed
+    stacklevel pointed every ProvisionalDateWarning at django_bikram/date.py,
+    so the registry keyed there and the second module in a program to touch
+    provisional data got no warning at all -- silently using unverified dates.
+
+    Runs in a subprocess because enabling provisional years mutates
+    process-global calendar state, and uses real module files because
+    attribution is what is being measured.
+    """
+    (tmp_path / "billing.py").write_text(
+        "from django_bikram import BSDate\n"
+        "def charge():\n"
+        "    return BSDate(2090, 1, 1)\n"
+    )
+    (tmp_path / "reporting.py").write_text(
+        "from django_bikram import BSDate\n"
+        "def summarise():\n"
+        "    return BSDate(2090, 1, 1)\n"  # same year, different call site
+    )
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        "import warnings, os\n"
+        "import billing, reporting\n"
+        "with warnings.catch_warnings(record=True) as caught:\n"
+        "    warnings.simplefilter('default')\n"
+        "    billing.charge()\n"
+        "    reporting.summarise()\n"
+        "names = sorted(os.path.basename(w.filename) for w in caught)\n"
+        "print(len(caught), ','.join(names))\n"
+    )
+
+    env = {
+        **os.environ,
+        "DJANGO_BIKRAM_PROVISIONAL_THROUGH_YEAR": "2100",
+        "PYTHONPATH": str(tmp_path),
+    }
+    result = subprocess.run(
+        [sys.executable, str(driver)],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    count, names = result.stdout.strip().split(" ", 1)
+    assert count == "2", f"both call sites must warn, got {count}: {result.stdout}"
+    assert names == "billing.py,reporting.py", names

@@ -34,7 +34,7 @@ jobs:
           django_bikram/date.py django_bikram/convert.py
           django_bikram/formatting.py django_bikram/exceptions.py
           django_bikram/calendar_data.py django_bikram/predict.py
-          django_bikram/sources.py -q
+          django_bikram/sources.py django_bikram/fiscal.py -q
 
   test:
     name: py${{ matrix.python-version }} · Django ${{ matrix.django }}
