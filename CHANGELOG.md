@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `sources.month_lengths_from_csv()` — derive Bikram Sambat month lengths from
+  any per-day CSV (a transcribed Panchanga, an internal dataset, a scrape),
+  using only the standard library. It accepts a `bs_date` column or split
+  `bs_year`/`bs_month`/`bs_day`, ignores extra columns, returns complete years
+  only, and validates the Gregorian side: every consecutive BS day must advance
+  the AD date by exactly one, which catches a truncated or mis-parsed file that
+  the BS numbering alone would hide.
+
+  This is the missing half of "corroborate each new year against at least two
+  independent sources" — it turns a second opinion into a table you can diff
+  against `VERIFIED_BS_MONTH_DAYS`, or slice past the verified range and feed to
+  `install_provisional()`. The package still fetches nothing itself.
+
 ## [0.4.0] - 2026-07-23
 
 ### Changed

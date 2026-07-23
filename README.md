@@ -510,6 +510,40 @@ When the Samiti publishes further years:
 
 This is the real fix. The provisional tier is a bridge to it, not a replacement.
 
+**Turning a source into a table.** Step 2 needs a second opinion in a comparable
+shape. `month_lengths_from_csv()` derives month lengths from any per-day CSV —
+a published Panchanga you transcribed, an internal dataset, a scrape — using
+only the standard library:
+
+```python
+from django_bikram_sambat.sources import month_lengths_from_csv
+from django_bikram_sambat.calendar_data import VERIFIED_BS_MONTH_DAYS
+
+table = month_lengths_from_csv("calendar.csv")     # {2085: (31, 31, 32, ...), ...}
+
+# Where the file overlaps the verified range, it must agree exactly.
+for year, lengths in table.items():
+    known = VERIFIED_BS_MONTH_DAYS.get(year)
+    if known and known != lengths:
+        print(f"{year}: source says {lengths}, table says {known}")
+```
+
+The file needs a `bs_date` column (or `bs_year`/`bs_month`/`bs_day`) and an ISO
+`ad_date`; extra columns are ignored. Only complete years are returned, and the
+Gregorian column is checked — every consecutive BS day must advance the AD date
+by exactly one, which is what catches a truncated fetch or a mis-parsed row that
+the BS numbering alone would hide.
+
+**This package never fetches anything.** Gather the data out of band and hand
+over the file. A date library that makes network calls turns every request cycle
+into somewhere your application can fail, and an HTML parser that breaks quietly
+produces plausible wrong dates — the one outcome this package exists to prevent.
+
+Past the verified range the same function feeds
+[Option B](#option-b--enable-computed-provisional-years-now): slice the result to
+a contiguous run starting at 2085 and pass it to `install_provisional()`. It
+stays flagged provisional, because one source is one source.
+
 ### Option B — enable computed (provisional) years now
 
 If you need dates past 2027 today and can accept that a predicted month length
