@@ -34,11 +34,11 @@ Invoice.objects.filter(issued_on__gte=BSDate(2081, 1, 1))  # uses the index
 
 ---
 
-## Read this before you publish or depend on this package
+## Read this before you depend on this package
 
-Two things are deliberately not glossed over.
+One thing is deliberately not glossed over.
 
-### 1. The *verified* range ends at 2084 BS (12 April 2028)
+### The *verified* range ends at 2084 BS (12 April 2028)
 
 The Bikram Sambat calendar's month lengths are set **astronomically** — by the
 moment the sun crosses into each zodiac sign — and published year by year in
@@ -57,35 +57,6 @@ a clearly-marked **provisional** tier, never as fact.
 
 If April 2028 is too close for you (it is, for anything long-lived), you have
 two honest options — see [Living past 2084](#living-past-2084).
-
-### 2. Renamed from `django-bikram` in 0.4.0
-
-If you installed `django-bikram`, the package is now **`django-bikram-sambat`**
-and the import is **`django_bikram_sambat`**:
-
-```bash
-pip uninstall django-bikram
-pip install django-bikram-sambat
-```
-```python
-from django_bikram_sambat import BSDate          # was: django_bikram
-```
-
-Nothing else changed — same API, same data, same behaviour. A find-and-replace
-of `django_bikram` → `django_bikram_sambat` is the whole migration. The old name
-still installs and simply re-exports this package, so existing code keeps
-working, but it will not receive further releases.
-
-The rename spells out the calendar. "Bikram" alone is a common Nepali given
-name, so `django-bikram` was ambiguous in search and told you nothing about what
-the package does.
-
-The import package is deliberately **not** `bikram`: PyPI already hosts a
-different project literally named
-[`bikram`](https://pypi.org/project/bikram/) (v2.1.4, "Utilities to work with
-Bikram/Vikram Samwat dates") which installs its own top-level `bikram/`
-directory. Two packages claiming one import name means installing both silently
-overwrites one, with no warning from pip.
 
 ---
 

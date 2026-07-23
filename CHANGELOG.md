@@ -11,29 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Renamed from `django-bikram` to `django-bikram-sambat`**, and the import
-  from `django_bikram` to `django_bikram_sambat`. "Bikram" alone is a common
-  Nepali given name, so the old name was ambiguous in search and said nothing
-  about what the package does; the new one spells out the calendar.
-
-  Migrating is a find-and-replace:
-
-  ```bash
-  pip uninstall django-bikram && pip install django-bikram-sambat
-  ```
-  ```python
-  from django_bikram_sambat import BSDate          # was: django_bikram
-  ```
-
-  **Nothing else changed** — same API, same calendar data, same behaviour, same
-  652 tests. `django-bikram` gets one final release that depends on this package
-  and re-exports it, so existing installs keep working, but it will receive no
-  further updates.
-
-  If you have migrations referencing `django_bikram.BSDate(...)` as a field
-  default, the migration serializer now emits `django_bikram_sambat.BSDate(...)`.
-  Existing migration files keep working while the old package is installed;
-  re-run `makemigrations` to update them, or edit the import by hand.
+- Renamed the distribution to `django-bikram-sambat` and the import package to
+  `django_bikram_sambat`. Nothing else changed: same API, same calendar data,
+  same behaviour, same 652 tests.
 
 ## [0.3.1] - 2026-07-23
 
